@@ -1,13 +1,11 @@
-# Electron Coulomb Interaction Simulation
+# Electron-Simulation
 
 A real-time 2D physics simulation of charged electrons repelling each other via **Coulomb's law**, built with **Pygame** for visualization and **SimPy** for discrete-event simulation timing.
 
 Electrons move in a bounded rectangular box, interacting through realistic electrostatic forces with proper numerical integration and collision reflection at boundaries.
 
-![Simulation Preview]
-
-
-<img src="/Users/harsh/files/github/Electron-Simulation/Screenshot 2025-12-01 at 10.48.54 PM.png">  
+## Simulation Preview
+<img src="/Users/harsh/files/github/Electron-Simulation/screenshot.png">  
 
 ## Features
 
@@ -44,16 +42,8 @@ pip install pygame simpy
 ## How to Run
 
 ```bash
-python electron_simulation.py
-```
-
-Or if the file is named differently (e.g., `main.py`):
-
-```bash
 python main.py
 ```
-
-Close the window or press the close button to exit.
 
 ## Configuration
 
@@ -87,11 +77,3 @@ All key parameters are defined at the top of the file and can be easily be adjus
 ## License
 
 MIT License – feel free to use, modify, and share.
-
----
-
-**Author**: Your Name  
-**Created**: December 2025
-
-Enjoy watching the chaotic dance of repelling electrons!
-```
