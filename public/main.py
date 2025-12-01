@@ -4,7 +4,9 @@ import random
 import simpy
 import pygame
 
+# ---------------------------------------
 # CONFIGURATION
+# ---------------------------------------
 FPS = 30
 WIDTH, HEIGHT = 1000, 800
 
@@ -108,6 +110,9 @@ class ElectronSim:
             pygame.draw.circle(screen, E_COLOR, (px, py), RADIUS)
 
 
+# -----------------------------
+# ASYNC MAIN LOOP
+# -----------------------------
 async def main():
     pygame.init()
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -133,4 +138,5 @@ async def main():
     pygame.quit()
 
 
+# Run async loop
 asyncio.run(main())

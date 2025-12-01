@@ -33,30 +33,37 @@
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
   <script>
     async function main() {
-      const pyodide = await loadPyodide();
+      try {
+        const pyodide = await loadPyodide();
 
-      const canvas = document.getElementById("canvas");
-      pyodide.canvas.setCanvas2D(canvas);
+        const canvas = document.getElementById("canvas");
+        pyodide.canvas.setCanvas2D(canvas);
 
-      await pyodide.loadPackage("micropip");
-      const micropip = pyodide.pyimport("micropip");
+        await pyodide.loadPackage("micropip");
+        const micropip = pyodide.pyimport("micropip");
 
-      await micropip.install("pygame-ce");
-      await micropip.install("simpy");
+        // Install packages
+        await micropip.install("pygame-ce");
+        await micropip.install("simpy");
 
-      const response = await fetch("main.py");
-      const code = await response.text();
+        // Fetch Python code
+        const response = await fetch("main.py");
+        if (!response.ok) throw new Error(`Failed to load main.py: ${response.status}`);
+        const code = await response.text();
 
-      document.getElementById("loading").remove();
+        // Remove loading
+        document.getElementById("loading").remove();
 
-      // Run Python asynchronously
-      await pyodide.runPythonAsync(code);
+        // Run Python asynchronously
+        await pyodide.runPythonAsync(code);
+
+      } catch (err) {
+        document.getElementById("loading").textContent = "Error: " + err;
+        console.error(err);
+      }
     }
 
-    main().catch(err => {
-      document.getElementById("loading").textContent = "Error: " + err;
-      console.error(err);
-    });
+    main();
   </script>
 </body>
 </html>
