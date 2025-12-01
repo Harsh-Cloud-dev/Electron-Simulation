@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Electron Coulomb Simulation</title>
+    <style>
+      body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; }
+      #pygame-container { box-shadow: 0 0 30px rgba(255,255,100,0.6); }
+      .loading {
+        position: absolute;
+        color: #ff0;
+        font-family: monospace;
+        font-size: 24px;
+        animation: blink 1.5s infinite;
+      }
+      @keyframes blink { 50% { opacity: 0; } }
+    </style>
+  </head>
+  <body>
+    <div class="loading" id="loading">Loading Python + Pygame…</div>
+    <div id="pygame-container"></div>
+
+    <!-- Pyodide CDN -->
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+    <script type="text/javascript">
+      async function main() {
+        // Load Pyodide
+        let pyodide = await loadPyodide({
+          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.1/full/"
+        });
+        document.getElementById("loading").remove();
+        await pyodide.loadPackage("micropip");
+        const micropip = pyodide.pyimport("micropip");
+        await micropip.install("pygame");
+        const response = await fetch("main.py");
+        const code = await response.text();
+        pyodide.runPython(code);
+      }
+      main();
+    </script>
+  </body>
+</html>
