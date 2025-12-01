@@ -1,43 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Electron Coulomb Simulation</title>
-    <style>
-      body { margin:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; }
-      #pygame-container { box-shadow: 0 0 30px rgba(255,255,100,0.6); }
-      .loading {
-        position: absolute;
-        color: #ff0;
-        font-family: monospace;
-        font-size: 24px;
-        animation: blink 1.5s infinite;
-      }
-      @keyframes blink { 50% { opacity: 0; } }
-    </style>
-  </head>
-  <body>
-    <div class="loading" id="loading">Loading Python + Pygame…</div>
-    <div id="pygame-container"></div>
+<head>
+  <meta charset="utf-8">
+  <title>Electron Coulomb Simulation</title>
+  <style>
+    body, html { margin:0; padding:0; background:#000; overflow:hidden; height:100%; }
+    #output { width:100vw; height:100vh; display:block; }
+    .loading {
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      color: #ff0; font-family: monospace; font-size: 28px;
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse { 50% { opacity: 0.5; } }
+  </style>
+</head>
+<body>
+  <div class="loading" id="loading">Loading Python + Pygame in browser…</div>
+  <canvas id="output"></canvas>
 
-    <!-- Pyodide CDN -->
-    <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
-    <script type="text/javascript">
-      async function main() {
-        // Load Pyodide
-        let pyodide = await loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.26.1/full/"
-        });
-        document.getElementById("loading").remove();
-        await pyodide.loadPackage("micropip");
-        const micropip = pyodide.pyimport("micropip");
-        await micropip.install("pygame");
-        const response = await fetch("main.py");
-        const code = await response.text();
-        pyodide.runPython(code);
-      }
-      main();
-    </script>
-  </body>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+  <script>
+    async function main() {
+      let pyodide = await loadPyodide();
+
+      document.getElementById("loading").remove();
+
+      // Set up console logging (helps debug if needed)
+      pyodide.setStdout({ batched: (str) => console.log(str) });
+      pyodide.setStderr({ batched: (str) => console.log(str) });
+
+      await pyodide.loadPackage("micropip");
+      const micropip = pyodide.pyimport("micropip");
+      await micropip.install("pygame");
+
+      // Force dummy video driver for web canvas (crucial for Pyodide)
+      pyodide.runPython(`
+import os
+os.environ["SDL_VIDEODRIVER"] = "dummy"
+import pygame
+pygame.init()
+screen = pygame.display.set_mode((1000, 800))
+pygame.display.set_caption("Electron Simulation")
+`);
+
+      // Load and execute your main.py
+      const response = await fetch("main.py");
+      const code = await response.text();
+      pyodide.runPython(code);
+    }
+    main();
+  </script>
+</body>
 </html>

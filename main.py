@@ -1,4 +1,10 @@
+# ←←← ADD THESE 4 LINES AT THE VERY TOP (before any other import)
+import os
+os.environ["SDL_VIDEODRIVER"] = "dummy"   # forces web canvas
 import pygame
+pygame.init()
+# ←←← END OF REQUIRED CHANGES
+
 import simpy
 import random
 import math
