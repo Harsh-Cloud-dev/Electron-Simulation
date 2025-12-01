@@ -1,54 +1,62 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Electron Coulomb Simulation</title>
+  <meta charset="utf-8" />
+  <title>Electron Simulation</title>
   <style>
-    body, html { margin:0; padding:0; background:#000; overflow:hidden; height:100%; }
-    #output { width:100vw; height:100vh; display:block; }
-    .loading {
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      color: #ff0; font-family: monospace; font-size: 28px;
-      animation: pulse 1.5s infinite;
+    body, html {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: black;
     }
-    @keyframes pulse { 50% { opacity: 0.5; } }
+    #canvas {
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+    #loading {
+      color: yellow;
+      font-family: monospace;
+      font-size: 22px;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
   </style>
 </head>
 <body>
-  <div class="loading" id="loading">Loading Python + Pygame in browser…</div>
-  <canvas id="output"></canvas>
+  <div id="loading">Loading Python & Pygame...</div>
+  <canvas id="canvas"></canvas>
 
   <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
   <script>
     async function main() {
-      let pyodide = await loadPyodide();
+      const pyodide = await loadPyodide();
 
-      document.getElementById("loading").remove();
-
-      // Set up console logging (helps debug if needed)
-      pyodide.setStdout({ batched: (str) => console.log(str) });
-      pyodide.setStderr({ batched: (str) => console.log(str) });
+      const canvas = document.getElementById("canvas");
+      pyodide.canvas.setCanvas2D(canvas);
 
       await pyodide.loadPackage("micropip");
       const micropip = pyodide.pyimport("micropip");
-      await micropip.install("pygame");
 
-      // Force dummy video driver for web canvas (crucial for Pyodide)
-      pyodide.runPython(`
-import os
-os.environ["SDL_VIDEODRIVER"] = "dummy"
-import pygame
-pygame.init()
-screen = pygame.display.set_mode((1000, 800))
-pygame.display.set_caption("Electron Simulation")
-`);
+      await micropip.install("pygame-ce");
+      await micropip.install("simpy");
 
-      // Load and execute your main.py
       const response = await fetch("main.py");
       const code = await response.text();
-      pyodide.runPython(code);
+
+      document.getElementById("loading").remove();
+
+      // Run Python asynchronously
+      await pyodide.runPythonAsync(code);
     }
-    main();
+
+    main().catch(err => {
+      document.getElementById("loading").textContent = "Error: " + err;
+      console.error(err);
+    });
   </script>
 </body>
 </html>
