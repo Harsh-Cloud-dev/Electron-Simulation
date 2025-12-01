@@ -81,18 +81,17 @@ class ElectronSim:
                 if y<=0 or y>=max_y: vy=-vy
                 self.positions[i]=[max(0,min(x,max_x)), max(0,min(y,max_y))]
                 self.velocities[i]=[vx,vy]
+
             yield self.env.timeout(TIME_STEP)
 
     def draw(self, screen):
         for x,y in self.positions:
             pygame.draw.circle(screen, E_COLOR, (int(x/SCALE), int(y/SCALE)), RADIUS)
 
-    # Add an electron
     def add_electron(self):
         self.positions.append([random.random()*WIDTH*SCALE, random.random()*HEIGHT*SCALE])
         self.velocities.append([random.uniform(-V0,V0), random.uniform(-V0,V0)])
 
-    # Remove an electron
     def remove_electron(self):
         if self.positions:
             self.positions.pop()
@@ -104,32 +103,30 @@ async def main_loop():
     screen = pygame.display.set_mode((WIDTH, HEIGHT))
     pygame.display.set_caption("Electron Simulation")
     env = simpy.Environment()
+
+    global sim  # make it accessible from JS
     sim = ElectronSim(env)
     running=True
 
     while running:
-        for event in pygame.event.get():
-            if event.type==pygame.QUIT:
-                running=False
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_k:
-                    sim.add_electron()
-                elif event.key == pygame.K_l:
-                    sim.remove_electron()
-
         env.step()
         screen.fill(BACKGROUND)
         sim.draw(screen)
         pygame.display.flip()
         await asyncio.sleep(1/FPS)
 
-    pygame.quit()
-
 await main_loop()
   `;
 
   document.getElementById("loading").remove();
   await pyodide.runPythonAsync(code);
+
+  // JS key listener for K/L
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "k" || e.key === "K") pyodide.runPython(`sim.add_electron()`);
+    if(e.key === "l" || e.key === "L") pyodide.runPython(`sim.remove_electron()`);
+  });
+
 }
 
 main().catch(err=>{

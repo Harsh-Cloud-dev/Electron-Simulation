@@ -50,6 +50,7 @@ class ElectronSim:
                 if y<=0 or y>=max_y: vy=-vy
                 self.positions[i]=[max(0,min(x,max_x)), max(0,min(y,max_y))]
                 self.velocities[i]=[vx,vy]
+
             yield self.env.timeout(TIME_STEP)
 
     def draw(self, screen):
@@ -92,4 +93,6 @@ async def main_loop():
 
     pygame.quit()
 
-await main_loop()
+
+if __name__ == "__main__":
+    asyncio.run(main_loop())
