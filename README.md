@@ -5,7 +5,7 @@ A real-time 2D physics simulation of charged electrons repelling each other via 
 Electrons move in a bounded rectangular box, interacting through realistic electrostatic forces with proper numerical integration and collision reflection at boundaries.
 
 ## Simulation Preview
-<img src="/Users/harsh/files/github/Electron-Simulation/screenshot.png">  
+<img src="screenshot.png">  
 
 ## Features
 
