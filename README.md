@@ -73,7 +73,3 @@ All key parameters are defined at the top of the file and can be easily be adjus
 - Simple Euler integration (Euler) – consider Verlet or RK4 for better stability
 - No energy conservation monitoring
 - Fixed time step (adaptive stepping could improve accuracy/efficiency)
-
-## License
-
-MIT License – feel free to use, modify, and share.
