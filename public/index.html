@@ -1,69 +1,120 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
+  <meta charset="UTF-8">
   <title>Electron Simulation</title>
   <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      overflow: hidden;
-      background: black;
-    }
-    #canvas {
-      width: 100vw;
-      height: 100vh;
-      display: block;
-    }
-    #loading {
-      color: yellow;
-      font-family: monospace;
-      font-size: 22px;
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-    }
+    body, html { margin:0; padding:0; background:#000; overflow:hidden; }
+    #canvas { width:100vw; height:100vh; display:block; }
+    #loading { color: yellow; font-family: monospace; font-size: 22px;
+      position: fixed; top:50%; left:50%; transform: translate(-50%, -50%);}
   </style>
 </head>
 <body>
-  <div id="loading">Loading Python & Pygame...</div>
-  <canvas id="canvas"></canvas>
+<div id="loading">Loading Python & Pygame...</div>
+<canvas id="canvas"></canvas>
 
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
-  <script>
-    async function main() {
-      try {
-        const pyodide = await loadPyodide();
+<script src="https://cdn.jsdelivr.net/pyodide/v0.26.1/full/pyodide.js"></script>
+<script>
+async function main() {
+  const pyodide = await loadPyodide();
+  const canvas = document.getElementById("canvas");
+  pyodide.canvas.setCanvas2D(canvas);
 
-        const canvas = document.getElementById("canvas");
-        pyodide.canvas.setCanvas2D(canvas);
+  await pyodide.loadPackage("micropip");
+  const micropip = pyodide.pyimport("micropip");
 
-        await pyodide.loadPackage("micropip");
-        const micropip = pyodide.pyimport("micropip");
+  await micropip.install("pygame-ce");
+  await micropip.install("simpy");
 
-        // Install packages
-        await micropip.install("pygame-ce");
-        await micropip.install("simpy");
+  // Python code embedded directly
+  const code = `
+import asyncio
+import pygame, simpy, random, math
 
-        // Fetch Python code
-        const response = await fetch("main.py");
-        if (!response.ok) throw new Error(`Failed to load main.py: ${response.status}`);
-        const code = await response.text();
+FPS = 30
+WIDTH, HEIGHT = 1000, 800
+SCALE = 1e-4
+NUM_ELECTRONS = 10
+TIME_STEP = 5e-7
+E_COLOR = (255,255,0)
+RADIUS = 10
+BACKGROUND = (0,0,0)
+V0 = 1e3
+ELECTRON_MASS = 9.109e-31
+ELECTRON_CHARGE = -1.602e-19
+K_CONST = 8.99e9
 
-        // Remove loading
-        document.getElementById("loading").remove();
+class ElectronSim:
+    def __init__(self, env):
+        self.env = env
+        self.positions = [[random.random()*WIDTH*SCALE, random.random()*HEIGHT*SCALE] for _ in range(NUM_ELECTRONS)]
+        self.velocities = [[random.uniform(-V0,V0), random.uniform(-V0,V0)] for _ in range(NUM_ELECTRONS)]
+        env.process(self.sim())
 
-        // Run Python asynchronously
-        await pyodide.runPythonAsync(code);
+    def sim(self):
+        while True:
+            forces = [[0.0,0.0] for _ in range(NUM_ELECTRONS)]
+            for i in range(NUM_ELECTRONS):
+                x1,y1 = self.positions[i]
+                for j in range(i+1, NUM_ELECTRONS):
+                    x2,y2 = self.positions[j]
+                    dx,dy = x1-x2, y1-y2
+                    dist = math.hypot(dx,dy)
+                    if dist<1e-12: continue
+                    f = K_CONST*ELECTRON_CHARGE**2/dist**2
+                    fx, fy = f*dx/dist, f*dy/dist
+                    forces[i][0]+=fx; forces[i][1]+=fy
+                    forces[j][0]-=fx; forces[j][1]-=fy
+            for i in range(NUM_ELECTRONS):
+                fx, fy = forces[i]
+                ax, ay = fx/ELECTRON_MASS, fy/ELECTRON_MASS
+                self.velocities[i][0]+=ax*TIME_STEP
+                self.velocities[i][1]+=ay*TIME_STEP
+                self.positions[i][0]+=self.velocities[i][0]*TIME_STEP
+                self.positions[i][1]+=self.velocities[i][1]*TIME_STEP
+            max_x,max_y = WIDTH*SCALE, HEIGHT*SCALE
+            for i in range(NUM_ELECTRONS):
+                x,y = self.positions[i]; vx,vy = self.velocities[i]
+                if x<=0 or x>=max_x: vx=-vx
+                if y<=0 or y>=max_y: vy=-vy
+                self.positions[i]=[max(0,min(x,max_x)), max(0,min(y,max_y))]
+                self.velocities[i]=[vx,vy]
 
-      } catch (err) {
-        document.getElementById("loading").textContent = "Error: " + err;
-        console.error(err);
-      }
-    }
+            yield self.env.timeout(TIME_STEP)
 
-    main();
-  </script>
+    def draw(self, screen):
+        for x,y in self.positions:
+            pygame.draw.circle(screen, E_COLOR, (int(x/SCALE), int(y/SCALE)), RADIUS)
+
+async def main_loop():
+    pygame.init()
+    screen = pygame.display.set_mode((WIDTH, HEIGHT))
+    pygame.display.set_caption("Electron Simulation")
+    env = simpy.Environment()
+    sim = ElectronSim(env)
+    running=True
+    while running:
+        for event in pygame.event.get():
+            if event.type==pygame.QUIT: running=False
+        env.step()
+        screen.fill(BACKGROUND)
+        sim.draw(screen)
+        pygame.display.flip()
+        await asyncio.sleep(1/FPS)
+    pygame.quit()
+
+await main_loop()
+  `;
+
+  document.getElementById("loading").remove();
+  await pyodide.runPythonAsync(code);
+}
+
+main().catch(err=>{
+  console.error(err);
+  document.getElementById("loading").textContent="Error: "+err;
+});
+</script>
 </body>
 </html>
